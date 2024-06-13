@@ -29,6 +29,8 @@ const scene = new THREE.Scene();
 // Loaders
 const rgbeLoader = new RGBELoader();
 const gltfLoader = new GLTFLoader();
+const textureLoader = new THREE.TextureLoader();
+
 let animationMixer = null;
 /**
  * Environment map
@@ -40,6 +42,8 @@ rgbeLoader.load('/spruit_sunrise.hdr', (environmentMap) => {
   scene.backgroundBlurriness = 0.5;
   scene.environment = environmentMap;
 });
+const armWood = textureLoader.load('textures/oak_veneer_01_arm_4k.jpg');
+const diffWood = textureLoader.load('textures/oak_veneer_01_diff_4k.jpg');
 
 /**
  * Terrain
@@ -174,7 +178,7 @@ const depthMaterial = new CustomShaderMaterial({
   depthPacking: THREE.RGBADepthPacking,
 });
 
-// clouds
+// plane whee
 let plane = null;
 gltfLoader.load('./models/planeUV.glb', (gltf) => {
   plane = gltf.scene;
@@ -184,7 +188,6 @@ gltfLoader.load('./models/planeUV.glb', (gltf) => {
   plane.scale.setScalar(0.125);
   plane.position.y = 0.7;
   scene.add(plane);
-  console.log(gltf);
 });
 
 // mesh
@@ -220,8 +223,10 @@ const board = evaluator.evaluate(boardFill, boardHole, SUBTRACTION);
 board.geometry.clearGroups();
 board.material = new THREE.MeshStandardMaterial({
   color: '#ffffff',
-  metalness: 0,
-  roughness: 3,
+  metalnessMap: armWood,
+  roughnessMap: armWood,
+  aoMap: armWood,
+  map: diffWood,
 });
 
 board.castShadow = true;
