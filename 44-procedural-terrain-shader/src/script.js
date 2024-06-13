@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 import GUI from 'lil-gui';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
+
 import terrainVertex from './shaders/terrain/vertex.glsl';
 import terrainFragment from './shaders/terrain/fragment.glsl';
 
@@ -25,7 +28,8 @@ const scene = new THREE.Scene();
 
 // Loaders
 const rgbeLoader = new RGBELoader();
-
+const gltfLoader = new GLTFLoader();
+let animationMixer = null;
 /**
  * Environment map
  */
@@ -53,6 +57,7 @@ debugObject.colorSand = '#ffe894';
 debugObject.colorGrass = '#85d534';
 debugObject.colorSnow = '#ffffff';
 debugObject.colorRock = '#bfbd8d';
+debugObject.colorClouds = '#ffffff';
 
 const uniforms = {
   uPositionFrequency: new THREE.Uniform(0.2),
@@ -72,6 +77,11 @@ const uniforms = {
   uColorGrass: new THREE.Uniform(new THREE.Color(debugObject.colorGrass)),
   uColorSnow: new THREE.Uniform(new THREE.Color(debugObject.colorSnow)),
   uColorRock: new THREE.Uniform(new THREE.Color(debugObject.colorRock)),
+};
+const cloudUniforms = {
+  uCloudColor: new THREE.Uniform(new THREE.Color(debugObject.colorClouds)),
+  uTime: new THREE.Uniform(0.0),
+  uCloudFrequency: new THREE.Uniform(0.1),
 };
 if (gui) {
   gui
@@ -126,7 +136,19 @@ if (gui) {
   gui
     .addColor(debugObject, 'colorRock')
     .onChange(() => uniforms.uColorRock.value.set(debugObject.colorRock));
+  gui
+    .add(cloudUniforms.uCloudFrequency, 'value')
+    .min(0)
+    .max(1)
+    .step(0.001)
+    .name('uCloudFrequency');
+  gui
+    .addColor(debugObject, 'colorClouds')
+    .onChange(() =>
+      cloudUniforms.uColorClouds.value.set(debugObject.colorClouds)
+    );
 }
+
 // Material
 const material = new CustomShaderMaterial({
   // csm
@@ -141,6 +163,7 @@ const material = new CustomShaderMaterial({
   roughness: 0.5,
   color: '#85d534',
 });
+
 const depthMaterial = new CustomShaderMaterial({
   // csm
   baseMaterial: THREE.MeshDepthMaterial,
@@ -149,6 +172,19 @@ const depthMaterial = new CustomShaderMaterial({
   uniforms: uniforms,
 
   depthPacking: THREE.RGBADepthPacking,
+});
+
+// clouds
+let plane = null;
+gltfLoader.load('./models/planeUV.glb', (gltf) => {
+  plane = gltf.scene;
+  animationMixer = new THREE.AnimationMixer(plane);
+  const action = animationMixer.clipAction(gltf.animations[0]);
+  action.play();
+  plane.scale.setScalar(0.125);
+  plane.position.y = 0.7;
+  scene.add(plane);
+  console.log(gltf);
 });
 
 // mesh
@@ -240,7 +276,7 @@ const camera = new THREE.PerspectiveCamera(
   35,
   sizes.width / sizes.height,
   0.1,
-  100
+  350
 );
 camera.position.set(-10, 6, -2);
 scene.add(camera);
@@ -267,12 +303,19 @@ renderer.setPixelRatio(sizes.pixelRatio);
  * Animate
  */
 const clock = new THREE.Clock();
+let previousTime = 0;
+
+// add plane movement
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-
+  const deltaTime = elapsedTime - previousTime;
   // uniforms
   uniforms.uTime.value = elapsedTime;
+  cloudUniforms.uTime.value = elapsedTime;
+
+  if (animationMixer) animationMixer.update(deltaTime);
+
   // Update controls
   controls.update();
 

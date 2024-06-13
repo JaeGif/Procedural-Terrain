@@ -13,7 +13,7 @@ varying float vUpDot;
 float getElevation(vec2 position) {
     float elevation = 0.0;
     vec2 warpedPosition = position;
-    warpedPosition+= uTime * 0.2;
+    warpedPosition += uTime * 0.2;
     warpedPosition += simplexNoise2d(warpedPosition * uWarpFrequency * uPositionFrequency) * uWarpStrength;
 
 
@@ -39,6 +39,8 @@ void main() {
     float elevation = getElevation(csm_Position.xz);
     csm_Position.y += elevation;
 
+
+    // fix normals
     positionA.y += getElevation(positionA.xz);
     positionB.y += getElevation(positionB.xz);
 
