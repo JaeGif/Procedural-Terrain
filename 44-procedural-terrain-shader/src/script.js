@@ -47,12 +47,31 @@ geometry.deleteAttribute('normal');
 
 geometry.rotateX(-Math.PI / 2);
 
+debugObject.colorWaterDeep = '#002b3d';
+debugObject.colorWaterSurface = '#66a8ff';
+debugObject.colorSand = '#ffe894';
+debugObject.colorGrass = '#85d534';
+debugObject.colorSnow = '#ffffff';
+debugObject.colorRock = '#bfbd8d';
+
 const uniforms = {
   uPositionFrequency: new THREE.Uniform(0.2),
   uElevationCrush: new THREE.Uniform(2.0),
   uStrength: new THREE.Uniform(2.0),
   uWarpStrength: new THREE.Uniform(0.5),
   uWarpFrequency: new THREE.Uniform(5.0),
+  uTime: new THREE.Uniform(0),
+
+  uColorWaterDeep: new THREE.Uniform(
+    new THREE.Color(debugObject.colorWaterDeep)
+  ),
+  uColorWaterSurface: new THREE.Uniform(
+    new THREE.Color(debugObject.colorWaterSurface)
+  ),
+  uColorSand: new THREE.Uniform(new THREE.Color(debugObject.colorSand)),
+  uColorGrass: new THREE.Uniform(new THREE.Color(debugObject.colorGrass)),
+  uColorSnow: new THREE.Uniform(new THREE.Color(debugObject.colorSnow)),
+  uColorRock: new THREE.Uniform(new THREE.Color(debugObject.colorRock)),
 };
 if (gui) {
   gui
@@ -85,6 +104,28 @@ if (gui) {
     .max(1)
     .step(0.001)
     .name('uWarpStrength');
+  gui
+    .addColor(debugObject, 'colorWaterDeep')
+    .onChange(() =>
+      uniforms.uColorWaterDeep.value.set(debugObject.colorWaterDeep)
+    );
+  gui
+    .addColor(debugObject, 'colorWaterSurface')
+    .onChange(() =>
+      uniforms.uColorWaterSurface.value.set(debugObject.colorWaterSurface)
+    );
+  gui
+    .addColor(debugObject, 'colorSand')
+    .onChange(() => uniforms.uColorSand.value.set(debugObject.colorSand));
+  gui
+    .addColor(debugObject, 'colorGrass')
+    .onChange(() => uniforms.uColorGrass.value.set(debugObject.colorGrass));
+  gui
+    .addColor(debugObject, 'colorSnow')
+    .onChange(() => uniforms.uColorSnow.value.set(debugObject.colorSnow));
+  gui
+    .addColor(debugObject, 'colorRock')
+    .onChange(() => uniforms.uColorRock.value.set(debugObject.colorRock));
 }
 // Material
 const material = new CustomShaderMaterial({
@@ -100,8 +141,22 @@ const material = new CustomShaderMaterial({
   roughness: 0.5,
   color: '#85d534',
 });
+const depthMaterial = new CustomShaderMaterial({
+  // csm
+  baseMaterial: THREE.MeshDepthMaterial,
+  silent: true,
+  vertexShader: terrainVertex,
+  uniforms: uniforms,
+
+  depthPacking: THREE.RGBADepthPacking,
+});
+
 // mesh
 const terrain = new THREE.Mesh(geometry, material);
+terrain.castShadow = true;
+terrain.receiveShadow = true;
+terrain.customDepthMaterial = depthMaterial;
+
 scene.add(terrain);
 
 // Brushes
@@ -204,6 +259,8 @@ const clock = new THREE.Clock();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
+  // uniforms
+  uniforms.uTime.value = elapsedTime;
   // Update controls
   controls.update();
 
