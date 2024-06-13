@@ -12,7 +12,9 @@ import terrainFragment from './shaders/terrain/fragment.glsl';
  */
 
 // Debug
-const gui = new GUI({ width: 325 });
+let gui;
+if (window.location.hash === '#debug') gui = new GUI({ width: 340 });
+
 const debugObject = {};
 
 // Canvas
@@ -47,8 +49,43 @@ geometry.rotateX(-Math.PI / 2);
 
 const uniforms = {
   uPositionFrequency: new THREE.Uniform(0.2),
+  uElevationCrush: new THREE.Uniform(2.0),
+  uStrength: new THREE.Uniform(2.0),
+  uWarpStrength: new THREE.Uniform(0.5),
+  uWarpFrequency: new THREE.Uniform(5.0),
 };
-
+if (gui) {
+  gui
+    .add(uniforms.uPositionFrequency, 'value')
+    .min(0)
+    .max(1)
+    .step(0.001)
+    .name('uPositionFrequency');
+  gui
+    .add(uniforms.uElevationCrush, 'value')
+    .min(0)
+    .max(10)
+    .step(0.001)
+    .name('uElevationCrush');
+  gui
+    .add(uniforms.uStrength, 'value')
+    .min(0)
+    .max(10)
+    .step(0.001)
+    .name('uStrength');
+  gui
+    .add(uniforms.uWarpFrequency, 'value')
+    .min(0)
+    .max(10)
+    .step(0.001)
+    .name('uWarpFrequency');
+  gui
+    .add(uniforms.uWarpStrength, 'value')
+    .min(0)
+    .max(1)
+    .step(0.001)
+    .name('uWarpStrength');
+}
 // Material
 const material = new CustomShaderMaterial({
   // csm
