@@ -29,6 +29,10 @@ void main() {
     color = mix(color, uColorGrass, grassMix);
 
     // rocks
+    float rockMix = vUpDot;
+    rockMix = 1.0 - step(0.8, rockMix);
+    rockMix *= step(- 0.06, vPosition.y);  // cuts rocks from grass level
+    color = mix(color, uColorRock, rockMix);
 
     // snow
     float snowThreshold = 0.45;
