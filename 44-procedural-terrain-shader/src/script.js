@@ -61,7 +61,6 @@ debugObject.colorSand = '#ffe894';
 debugObject.colorGrass = '#85d534';
 debugObject.colorSnow = '#ffffff';
 debugObject.colorRock = '#bfbd8d';
-debugObject.colorClouds = '#ffffff';
 
 const uniforms = {
   uPositionFrequency: new THREE.Uniform(0.2),
@@ -82,11 +81,7 @@ const uniforms = {
   uColorSnow: new THREE.Uniform(new THREE.Color(debugObject.colorSnow)),
   uColorRock: new THREE.Uniform(new THREE.Color(debugObject.colorRock)),
 };
-const cloudUniforms = {
-  uCloudColor: new THREE.Uniform(new THREE.Color(debugObject.colorClouds)),
-  uTime: new THREE.Uniform(0.0),
-  uCloudFrequency: new THREE.Uniform(0.1),
-};
+
 if (gui) {
   gui
     .add(uniforms.uPositionFrequency, 'value')
@@ -140,17 +135,6 @@ if (gui) {
   gui
     .addColor(debugObject, 'colorRock')
     .onChange(() => uniforms.uColorRock.value.set(debugObject.colorRock));
-  gui
-    .add(cloudUniforms.uCloudFrequency, 'value')
-    .min(0)
-    .max(1)
-    .step(0.001)
-    .name('uCloudFrequency');
-  gui
-    .addColor(debugObject, 'colorClouds')
-    .onChange(() =>
-      cloudUniforms.uColorClouds.value.set(debugObject.colorClouds)
-    );
 }
 
 // Material
@@ -182,11 +166,21 @@ const depthMaterial = new CustomShaderMaterial({
 let plane = null;
 gltfLoader.load('./models/planeUV.glb', (gltf) => {
   plane = gltf.scene;
+  // cast shadows
+  plane.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+    }
+  });
+
   animationMixer = new THREE.AnimationMixer(plane);
   const action = animationMixer.clipAction(gltf.animations[0]);
   action.play();
   plane.scale.setScalar(0.125);
   plane.position.y = 0.7;
+  plane.position.x = 0;
+  plane.position.z = 0;
+  plane.rotation.y = Math.PI;
   scene.add(plane);
 });
 
@@ -203,7 +197,7 @@ const water = new THREE.Mesh(
   new THREE.PlaneGeometry(10, 10, 1, 1),
   new THREE.MeshPhysicalMaterial({
     transmission: 1,
-    roughness: 0.4,
+    roughness: 0.25,
   })
 );
 water.rotation.x = -Math.PI / 2;
@@ -288,6 +282,7 @@ scene.add(camera);
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
+controls.maxPolarAngle = Math.PI / 2;
 controls.enableDamping = true;
 
 /**
@@ -308,22 +303,26 @@ renderer.setPixelRatio(sizes.pixelRatio);
  * Animate
  */
 const clock = new THREE.Clock();
-let previousTime = 0;
 
 // add plane movement
-
+const movePlane = (theta) => {
+  const angle = Math.sin(theta) / 3;
+  plane.position.z = angle;
+};
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - previousTime;
   // uniforms
   uniforms.uTime.value = elapsedTime;
-  cloudUniforms.uTime.value = elapsedTime;
 
-  if (animationMixer) animationMixer.update(deltaTime);
+  if (animationMixer) animationMixer.update(elapsedTime);
 
   // Update controls
   controls.update();
 
+  // animate plane motion
+  if (plane) {
+    movePlane(elapsedTime);
+  }
   // Render
   renderer.render(scene, camera);
 
