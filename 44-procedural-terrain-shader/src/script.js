@@ -2,13 +2,16 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
+import { Water } from 'three/addons/objects/Water.js';
 import GUI from 'lil-gui';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 
 import terrainVertex from './shaders/terrain/vertex.glsl';
 import terrainFragment from './shaders/terrain/fragment.glsl';
+
+import waterVertex from './shaders/water/vertex.glsl';
+import waterFragment from './shaders/water/fragment.glsl';
 
 /**
  * Base
@@ -192,18 +195,97 @@ terrain.customDepthMaterial = depthMaterial;
 
 scene.add(terrain);
 
+const waterUniforms = {
+  uTime: new THREE.Uniform(0),
+  uSmallWavesElevation: new THREE.Uniform(0.02),
+  uSmallWavesFrequency: new THREE.Uniform(3.323),
+  uSmallWavesSpeed: new THREE.Uniform(0.29),
+  uSmallWavesIterations: new THREE.Uniform(4),
+};
 // water
 const water = new THREE.Mesh(
-  new THREE.PlaneGeometry(10, 10, 1, 1),
-  new THREE.MeshPhysicalMaterial({
-    transmission: 1,
-    roughness: 0.3,
+  new THREE.PlaneGeometry(10, 10, 128, 128),
+  new THREE.ShaderMaterial({
+    transparent: true,
+    vertexShader: waterVertex,
+    fragmentShader: waterFragment,
+    uniforms: waterUniforms,
   })
 );
 water.rotation.x = -Math.PI / 2;
-water.position.y = -0.1;
+water.position.y = -0.075;
 
 scene.add(water);
+
+if (gui) {
+  gui
+    .add(waterUniforms.uBigWavesElevation, 'value')
+    .min(0)
+    .max(1)
+    .step(0.001)
+    .name('uBigWavesElevation');
+  gui
+    .add(waterUniforms.uBigWavesFrequency.value, 'x')
+    .min(0)
+    .max(10)
+    .step(0.001)
+    .name('uBigWavesFrequencyX');
+  gui
+    .add(waterUniforms.uBigWavesFrequency.value, 'y')
+    .min(0)
+    .max(10)
+    .step(0.001)
+    .name('uBigWavesFrequencyY');
+  gui
+    .add(waterUniforms.uBigWavesSpeed, 'value')
+    .min(0)
+    .max(10)
+    .step(0.001)
+    .name('uBigWavesSpeed');
+  gui
+    .add(waterUniforms.uSmallWavesSpeed, 'value')
+    .min(0)
+    .max(10)
+    .step(0.001)
+    .name('uSmallWavesSpeed');
+  gui
+    .add(waterUniforms.uSmallWavesFrequency, 'value')
+    .min(0)
+    .max(30)
+    .step(0.001)
+    .name('uSmallWavesFrequency');
+  gui
+    .add(waterUniforms.uSmallWavesIterations, 'value')
+    .min(0)
+    .max(6)
+    .step(1)
+    .name('uSmallWavesIterations');
+  gui
+    .add(waterUniforms.uSmallWavesElevation, 'value')
+    .min(0)
+    .max(1)
+    .step(0.001)
+    .name('uSmallWavesElevation');
+}
+
+// water take 2
+// Water
+
+/* const waterGeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+const water = new Water(waterGeometry, {
+  textureWidth: 1024,
+  textureHeight: 1024,
+  waterNormals: waterNormalMap,
+
+  waterColor: '#66a8ff',
+  distortionScale: 3.7,
+  fog: scene.fog !== undefined,
+});
+
+water.rotation.x = -Math.PI / 2;
+water.position.y = -0.1;
+
+scene.add(water); */
 // Brushes
 
 const boardFill = new Brush(new THREE.BoxGeometry(11, 2, 11));
@@ -312,8 +394,7 @@ const movePlane = (theta) => {
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
   // uniforms
-  uniforms.uTime.value = elapsedTime;
-
+  uniforms.uTime.value = waterUniforms.uTime.value = elapsedTime;
   if (animationMixer) animationMixer.update(elapsedTime);
 
   // Update controls
@@ -323,6 +404,7 @@ const tick = () => {
   if (plane) {
     movePlane(elapsedTime);
   }
+
   // Render
   renderer.render(scene, camera);
 
