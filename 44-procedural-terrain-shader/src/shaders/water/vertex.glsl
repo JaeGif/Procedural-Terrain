@@ -22,6 +22,7 @@ void main() {
     }
     modelPosition.y += elevation;
 
+
     // the rest
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;

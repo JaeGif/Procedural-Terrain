@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { Water } from 'three/addons/objects/Water.js';
 import GUI from 'lil-gui';
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
