@@ -1,19 +1,35 @@
-*
-{
-    margin: 0;
-    padding: 0;
+* {
+  margin: 0;
+  padding: 0;
 }
 
 html,
-body
-{
-    overflow: hidden;
+body {
+  overflow: hidden;
 }
 
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
+.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
+}
+
+.loading-bar {
+  height: 10px;
+  border-radius: 2px;
+  width: 100%;
+  background: rgba(26, 143, 215, 0.77);
+  transform: scaleX(0);
+  transform-origin: top left;
+  transition: transform 0.5s;
+  will-change: transform;
+  position: absolute;
+  top: 50%;
+}
+
+.loading-bar.end {
+  transform: scaleX(0);
+  transform-origin: top right;
+  transition: transform 1.5s ease-in-out;
 }

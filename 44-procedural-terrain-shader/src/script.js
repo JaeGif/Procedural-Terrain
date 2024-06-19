@@ -12,6 +12,7 @@ import terrainFragment from './shaders/terrain/fragment.glsl';
 import waterVertex from './shaders/water/vertex.glsl';
 import waterFragment from './shaders/water/fragment.glsl';
 
+import gsap from 'gsap';
 /**
  * Base
  */
@@ -29,10 +30,35 @@ const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
 
 // Loaders
-const rgbeLoader = new RGBELoader();
-const gltfLoader = new GLTFLoader();
-const textureLoader = new THREE.TextureLoader();
+const loadingManager = new THREE.LoadingManager();
+const rgbeLoader = new RGBELoader(loadingManager);
+const gltfLoader = new GLTFLoader(loadingManager);
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
+const loadingBar = document.getElementsByClassName('loading-bar')[0];
+
+loadingManager.onProgress = (url, loaded, total) => {
+  const progressRatio = loaded / total;
+  loadingBar.style.transform = `scaleX(${progressRatio})`;
+  // smoothly animate somethign to represent the loading on screen
+  // fase into the finished product
+};
+loadingManager.onLoad = () => {
+  window.setTimeout(() => {
+    // Animate overlay gradually in
+    gsap.to(loadingMaterial.uniforms.uAlpha, {
+      duration: 3,
+      value: 0,
+      delay: 1,
+    });
+
+    loadingBar.style.transform = ``;
+    loadingBar.classList.add('end');
+  }, 500);
+};
+loadingManager.onError = (error) => {
+  console.error(new Error(error));
+};
 let animationMixer = null;
 /**
  * Environment map
@@ -46,7 +72,34 @@ rgbeLoader.load('/spruit_sunrise.hdr', (environmentMap) => {
 });
 const armWood = textureLoader.load('textures/oak_veneer_01_arm_4k.jpg');
 const diffWood = textureLoader.load('textures/oak_veneer_01_diff_4k.jpg');
+/* 
+  Loading Screen 
+*/
 
+const loadingMaterial = new THREE.ShaderMaterial({
+  transparent: true,
+  uniforms: {
+    uAlpha: new THREE.Uniform(1),
+  },
+  vertexShader: `
+      void main()
+      {
+          gl_Position = vec4(position, 1.0);
+      }
+  `,
+  fragmentShader: `
+      uniform float uAlpha;
+      void main()
+      {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
+      }
+  `,
+});
+const loadingScreen = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  loadingMaterial
+);
+scene.add(loadingScreen);
 /**
  * Terrain
  */
